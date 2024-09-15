@@ -30,6 +30,7 @@ install: clean out
 		--workpath $(BUILD_DIR) \
 		--add-data="$(ASSETS_DIR)/Consolas.ttf:$(ASSETS_DIR)" \
 		--add-data="$(EMU):." \
+		--name hohoemu \
 		$(TARGET) \
 		--onefile
 	xdg-open $(DIST_DIR) &
