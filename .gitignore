@@ -1,0 +1,10 @@
+asemu
+build/*
+
+
+### Python ###
+__pycache__/
+
+
+### Visual Studio Code ###
+.vscode/*
