@@ -4,6 +4,7 @@
 #include <omp.h>
 
 #include "preprocessor.h"
+#include "utils.h"
 
 
 
@@ -48,7 +49,7 @@ static void process_symbol_table(FILE *fp, struct MemoryLayout *mem)
     }
 }
 
-static void process_section_content(FILE *fp,  const char *read_until_str, struct MemorySegment *segment)
+static void process_section_content(FILE *fp, const char *read_until_str, struct MemorySegment *segment)
 {
     char line_buf[256];
     char data_buf[1024];
@@ -57,17 +58,20 @@ static void process_section_content(FILE *fp,  const char *read_until_str, struc
     // " 401020 f30f1efa 31ed4989 d15e4889 e24883e4  ....1.I..^H..H.."
     while ( fgets(line_buf, sizeof(line_buf), fp) != NULL && strstr(line_buf, read_until_str) == NULL )
     {
+        // valid lines all start with a space character
         if (line_buf[0] == ' ')
         {
+            // only extract the segment's address on first encounter
             if (segment->addr == 0)
-                segment->addr = strtoul(line_buf, NULL, 16);
+                segment->addr = strtoull(line_buf, NULL, 16);
 
-            // start at 8, because we want to skip the first 8 characters of the line
-            // increment i by 2 because we process two hexa characters (1 byte) at a time
-            for (int i = 8; i < (int)strlen(line_buf); i += 2)
+            // start at 8, because we want to skip the address part of the line
+            // increment i by 2 because we process two hex characters (1 byte) at a time
+            for (size_t i = 8; i < strlen(line_buf); i += 2)
             {
                 if (line_buf[i] == ' ')
                 {
+                    // if we encounter 2 space characters, we ran out of useful characters to process
                     if (line_buf[i + 1] == ' ')
                         break;
 
@@ -75,7 +79,9 @@ static void process_section_content(FILE *fp,  const char *read_until_str, struc
                     i++;
                 }
 
-                data_buf[segment->size++] = convert_ascii_hex_to_dec(line_buf[i]) * 16 + convert_ascii_hex_to_dec(line_buf[i + 1]);
+                // convert the next two hex characters to a byte
+                char hex[] = { line_buf[i], line_buf[i + 1], '\0' };
+                data_buf[segment->size++] = hex_to_byte(hex);
             }
         }
     }
@@ -86,7 +92,7 @@ static void process_section_content(FILE *fp,  const char *read_until_str, struc
 
 static void read_assembly_instructions(FILE *fp, struct AssemblyText *assembly)
 {
-    char as_lines[256][128];
+    char as_lines[256][256];
     char as_line_buf[256];
     char line_buf[256];
     uint64_t as_addrs[256];
@@ -121,7 +127,7 @@ static void read_assembly_instructions(FILE *fp, struct AssemblyText *assembly)
         assembly->addresses[i] = as_addrs[i];
 
         assembly->lines[i] = malloc(sizeof(char) * 128);
-        assembly->lines[i] = as_lines[i];
+        memcpy(assembly->lines[i], as_lines[i], 128);
     }
 
 
@@ -147,8 +153,14 @@ void process_objdump_output(struct MemoryLayout *mem, struct AssemblyText *assem
         "--section=.rodata "            // disassemble .rodata section
         "--section=.data "              // disassemble .data section
         "--section=.bss "               // disassemble .bss section
-        "/tmp/compiled_assembly_file",  // our executable object file
+        COMPILED_FILE_PATH,             // the compiled file
         "r");
+
+    if (obj_fp == NULL)
+    {
+        perror("Call to popen failed");
+        exit(1);
+    }
 
 
     // get the addresses of start, end, __bss_start and main symbols from the symbol table
@@ -167,4 +179,6 @@ void process_objdump_output(struct MemoryLayout *mem, struct AssemblyText *assem
 
     // read assembly instructions and their addresses
     read_assembly_instructions(obj_fp, assembly);
+
+    pclose(obj_fp);
 }

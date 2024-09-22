@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
-#include "utils.h"
 #include "serializer.h"
+#include "utils.h"
 
 
 extern struct AssemblyText assembly;
@@ -27,7 +29,13 @@ static void print_segment(struct MemorySegment *seg)
 
 void initialize_serializer()
 {
-    emu_out_fp = fopen("/tmp/emu_output_240830.txt", "w");
+    if ( remove(SERIALIZED_OUTPUT_PATH) == -1 && errno != ENOENT )
+    {
+        perror("Error removing serialized output file");
+        exit(1);
+    }
+
+    emu_out_fp = fopen(SERIALIZED_OUTPUT_PATH, "w");
 }
 
 void write_separator()

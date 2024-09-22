@@ -392,37 +392,13 @@ static void init_regs()
 
 void init_emu(struct MemoryLayout *memory_layout, int *instruction_count)
 {
+    // create a new instance of unicorn engine with x86 architecture in 64-bit mode.
     if (UC_ERR_CHECK( uc_open(UC_ARCH_X86, UC_MODE_64, &uc) ))
         ABORT()
 
-
     init_virtual_mem(memory_layout);
-
     init_hooks(instruction_count);
-
     init_regs(memory_layout->text.seg.addr);
-}
-
-void print_mapped_memory_regions()
-{
-    puts("\n\n-----------------------------------------------------\n"
-             "        ### MAPPED VIRTUAL MEMORY REGIONS ###\n"
-             "-----------------------------------------------------");
-
-    uc_mem_region *mapped_mem_regions;
-    int num_mapped_regions;
-
-    // retrieve the mapped virtual memory regions
-    if (UC_ERR_CHECK( uc_mem_regions(uc, &mapped_mem_regions, (uint32_t *)&num_mapped_regions) ))
-        ABORT()
-
-    for (int i = 0; i < num_mapped_regions; i++)
-    {
-        printf("MEM REGION #%d::  start addr: %#lx   end addr: %#lx\n",
-            i, mapped_mem_regions[i].begin, mapped_mem_regions[i].end);
-    }
-
-    uc_free(mapped_mem_regions);
 }
 
 
@@ -442,15 +418,14 @@ int emulate(struct TextSegment *text_segment)
              "-----------------------------------------------------");
 
 
-
     printf("Contents of AL register:\n  "            \
            "hex: %#x   dec: %u\n\n", (uint8_t)REG_RAX, (uint8_t)REG_RAX);
-
 
 
     uc_hook_del(uc, insn_hook_handle);
     uc_hook_del(uc, mem_access_handle);
     uc_close(uc);
+
 
     return EXIT_SUCCESS;
 }

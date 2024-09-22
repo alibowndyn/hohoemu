@@ -1,5 +1,5 @@
-#ifndef _EMU_SERIALIZER
-#define _EMU_SERIALIZER
+#ifndef _EMU_SERIALIZER_H
+#define _EMU_SERIALIZER_H
 
 #include "utils.h"
 
@@ -24,6 +24,7 @@ void write_stack_overflow_info(uint64_t addr);
 void write_invalid_stack_pointer_value_indicator();
 
 void destroy_serializer();
+
 
 
 

@@ -1,12 +1,15 @@
+#include <unistd.h>
+#include <errno.h>
+#include <sys/wait.h>
 #include <string.h>
 
 #include "preprocessor.h"
-#include "emu.h"
-#include "utils.h"
 #include "serializer.h"
+#include "utils.h"
+#include "emu.h"
 
 
-#define MAX_COMMAND_LEN     256
+#define GCC_PATH   "/usr/bin/gcc"
 
 
 struct MemoryLayout mem_layout = {0};
@@ -23,7 +26,7 @@ void dispose(struct MemoryLayout *mem, struct AssemblyText *assembly)
 
     for (int i = 0; i < assembly->num_lines; i++)
     {
-        // free(assembly->lines[i]);
+        free(assembly->lines[i]);
         assembly->lines[i] = NULL;
     }
 
@@ -36,38 +39,55 @@ void dispose(struct MemoryLayout *mem, struct AssemblyText *assembly)
 
 int main(int argc, char *argv[])
 {
-    char cmd[MAX_COMMAND_LEN] = "/usr/bin/gcc ";
-    int insn_cnt = 0;
-
-    system("/usr/bin/rm -f /tmp/compiled_assembly_file /tmp/emu_output_240830.txt");
-
     //#define DEBUG
     #ifdef DEBUG
-                        /// THIS IS FOR DEBUGGING ///
-        char *assembly_src = " ~/Desktop/assembly_files/stack_overflow.s";
+        const char *assembly_src = "~/Desktop/assembly_files/stack_overflow.s";
     #else
-        char *assembly_src = argv[argc - 1];
+        const char *assembly_src = argv[1];
     #endif
 
-    // TODO: `-g` switch should only be added when trying to compile from an assembly source file
-    char *switches_src = " -g -o /tmp/compiled_assembly_file -no-pie";
-
-    // append the source file to the command string
-    strncat(cmd + strlen(cmd), assembly_src, MAX_COMMAND_LEN-1);
-    // append the switches to the command string
-    strncat(cmd + strlen(cmd), switches_src, MAX_COMMAND_LEN-1);
-
-
-    // Compile the assembly file.
-    int ret_value = system(cmd);
-    if ( ret_value == -1 || ret_value != 0 ) // GCC Error
+    if (argc != 2)
     {
-        fprintf(stderr, "\nERROR: failed to compile assembly file\n\n");
-        exit(1); // TODO: think of different exit codes and write it in the docs
+        fprintf(stderr, "Usage: %s <assembly_file>\n", argv[0]);
+        exit(1);
     }
 
-    // After compiling the assembly file, we need to call objdump
-    // on it and process its output.
+    if ( remove(COMPILED_FILE_PATH) == -1 && errno != ENOENT )
+    {
+        perror("Error removing compiled assembly file");
+        exit(1);
+    }
+
+
+    pid_t pid = fork();
+
+    if (pid == -1)
+    {
+        perror("Fork failed");
+        exit(1);
+    }
+    else if (pid == 0) // child
+    {
+        // execl will replace the currently running process with the call to GCC,
+        // so no lines of code will run after execl, but only if GCC successfully runs
+        execl(GCC_PATH, "gcc", assembly_src, "-g", "-o", COMPILED_FILE_PATH, "-no-pie", (char *)NULL);
+
+        // only runs if execl fails
+        perror("Failed to compile the assembly file");
+        exit(1);
+    }
+    else // parent
+    {
+        // wait for the child process to die
+        waitpid(pid, NULL, 0);
+    }
+
+    // successful compilation, resume program execution
+    int insn_cnt = 0;
+
+
+    // after compiling the assembly file, we disassemble it using objdump
+    // and process the resulting output
     process_objdump_output(&mem_layout, &assembly);
 
 
@@ -99,7 +119,6 @@ int main(int argc, char *argv[])
 
     // ##############  WHERE THE MAGIC HAPPENS  ##############
     init_emu(&mem_layout, &insn_cnt);
-    print_mapped_memory_regions();
     emulate(&mem_layout.text);
     // #######################################################
 

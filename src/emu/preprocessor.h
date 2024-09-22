@@ -1,5 +1,5 @@
-#ifndef _EMU_PREPROCESSOR
-#define _EMU_PREPROCESSOR
+#ifndef _EMU_PREPROCESSOR_H
+#define _EMU_PREPROCESSOR_H
 
 #include "utils.h"
 

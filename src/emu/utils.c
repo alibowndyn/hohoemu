@@ -1,16 +1,35 @@
+#include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "utils.h"
 
 
 
-uint8_t convert_ascii_hex_to_dec(char c)
+int is_valid_filename(const char *filename)
 {
-    if (c >= 'a' && c <= 'f')
-        return (uint8_t)(15 - ('f' - c));
+    size_t len = strlen(filename);
 
-    return (uint8_t)atoi(&c);
+    if (len < 3 || len > MAX_FILENAME_LEN)
+        return 0;
+
+    if (strcmp(filename + len - 2, ".s") != 0)
+        return 0;
+
+    for (size_t i = 0; i < len - 2; i++)
+    {
+        if ( !isalnum(filename[i]) && filename[i] != '_' && filename[i] != '-' )
+            return 0;
+    }
+
+    return 1;
+}
+
+uint8_t hex_to_byte(const char *hex)
+{
+    return (uint8_t)strtoul(hex, NULL, 16);
 }
 
 int index_of_memory_address(uint64_t *addresses, int size, uint64_t address)
