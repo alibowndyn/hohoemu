@@ -39,11 +39,9 @@ void dispose(struct MemoryLayout *mem, struct AssemblyText *assembly)
 
 int main(int argc, char *argv[])
 {
-    //#define DEBUG
+    #define DEBUG
     #ifdef DEBUG
-        const char *assembly_src = "~/Desktop/assembly_files/stack_overflow.s";
-    #else
-        const char *assembly_src = argv[1];
+    argc = 2;
     #endif
 
     if (argc != 2)
@@ -58,7 +56,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-
+    #ifdef DEBUG
+    system(GCC_PATH " -g ~/Desktop/assembly_files/all_segments.s -g -o " COMPILED_FILE_PATH " -no-pie");
+    #else
     pid_t pid = fork();
 
     if (pid == -1)
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     {
         // execl will replace the currently running process with the call to GCC,
         // so no lines of code will run after execl, but only if GCC successfully runs
-        execl(GCC_PATH, "gcc", assembly_src, "-g", "-o", COMPILED_FILE_PATH, "-no-pie", (char *)NULL);
+        execl(GCC_PATH, "gcc", argv[1], "-g", "-o", COMPILED_FILE_PATH, "-no-pie", (char *)NULL);
 
         // only runs if execl fails
         perror("Failed to compile the assembly file");
@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
         // wait for the child process to die
         waitpid(pid, NULL, 0);
     }
+    #endif
 
     // successful compilation, resume program execution
     int insn_cnt = 0;

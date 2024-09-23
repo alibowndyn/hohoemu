@@ -100,7 +100,10 @@ static void read_assembly_instructions(FILE *fp, struct AssemblyText *assembly)
 
     while ( fgets(line_buf, sizeof(line_buf), fp) != NULL )
     {
-        // When the two buffers contains lines like these:
+        if ( strstr(line_buf, "Disassembly of section .rodata:") != NULL )
+            break;
+
+        // When the two buffers contain lines like these:
         // "#         pop        rbp"
         // "  401176:	5d                   	pop    rbp"
         if (as_line_buf[0] == '#' && line_buf[0] == ' ')
@@ -134,6 +137,89 @@ static void read_assembly_instructions(FILE *fp, struct AssemblyText *assembly)
     for (int i = 0; i < assembly->num_lines; i++)
     {
         printf("%#lx: %s\n", assembly->addresses[i], assembly->lines[i]);
+    }
+}
+
+static void get_symbol_data(FILE *fp, const char *read_until_str, struct MemorySegment *segment)
+{
+    char line_buf[256];
+    int sym_arr_size = 8;
+    int sym_idx = 0; // variable keeping track of the number of symbols in the segment
+
+    struct Symbol **syms = calloc(sym_arr_size, sizeof(struct Symbol *));
+    for (int i = 0; i < sym_arr_size; i++)
+    {
+        syms[i] = calloc(1, sizeof(struct Symbol));
+        syms[i]->name = malloc(64 + 1);
+    }
+
+    while ( fgets(line_buf, sizeof(line_buf), fp) != NULL && strstr(line_buf, read_until_str) == NULL)
+    {
+        // only lines starting with '0' can contain a symbol's info
+        if (line_buf[0] != '0')
+            continue;
+
+        // we are trying to extract a symbol's info from a line like this:
+        // "0000000000402004 <txt1>:"
+        int items_processed = sscanf(line_buf, "%16lx <%[^>]", &syms[sym_idx]->addr, syms[sym_idx]->name);
+
+        // only store a symbol if both its address and name could be read from a line
+        if (items_processed == 2)
+        {
+            // calculate the size of the (n-1)th symbol in the segment by subtracting
+            // its starting address from the starting address of the nth symbol
+            if (sym_idx > 0)
+            {
+                struct Symbol *prev = syms[sym_idx - 1];
+                struct Symbol *curr = syms[sym_idx];
+
+                prev->size = curr->addr - prev->addr;
+                prev->bytes = malloc(prev->size);
+
+                // copy the bytes of the (n-1)th symbol from the segment's bytes
+                memcpy(prev->bytes, segment->bytes + (prev->addr - segment->addr), prev->size);
+            }
+
+            sym_idx++;
+        }
+
+        if (sym_idx >= sym_arr_size)
+        {
+            sym_arr_size *= 2;
+            syms = realloc(syms, sym_arr_size * sizeof(struct Symbol *));
+
+            for (int i = sym_idx; i < sym_arr_size; i++)
+            {
+                syms[i] = calloc(1, sizeof(struct Symbol));
+                syms[i]->name = malloc(64 + 1);
+            }
+        }
+    }
+
+    syms = realloc(syms, sym_idx * sizeof(struct Symbol *));
+
+    segment->num_symbols = sym_idx;
+    segment->symbols = syms;
+
+    // calculate the size of the last symbol in the segment by subtracting
+    // its starting address from the end address of the segment
+    struct Symbol *last_symbol = segment->symbols[segment->num_symbols - 1];
+    last_symbol->size = (segment->addr + segment->size) - last_symbol->addr;
+
+    // copy the bytes of the last symbol from the segment's bytes
+    last_symbol->bytes = malloc(last_symbol->size);
+    memcpy(last_symbol->bytes, segment->bytes + (last_symbol->addr - segment->addr), last_symbol->size);
+
+    for (int i = 0; i < segment->num_symbols; i++)
+    {
+        printf("\nSymbol's name: %s\n"\
+               "Its address: %#lx\n"\
+               "Its size: %ld\n", segment->symbols[i]->name, segment->symbols[i]->addr, segment->symbols[i]->size);
+
+        for (int j = 0; j < segment->symbols[i]->size; j++)
+            printf("%02x ", segment->symbols[i]->bytes[j]);
+
+        puts("");
     }
 }
 
@@ -179,6 +265,17 @@ void process_objdump_output(struct MemoryLayout *mem, struct AssemblyText *assem
 
     // read assembly instructions and their addresses
     read_assembly_instructions(obj_fp, assembly);
+
+
+    // extract the symbols from RODATA
+    get_symbol_data(obj_fp, "Disassembly of section .data:", &mem->rodata);
+
+    // extract the symbols from DATA
+    get_symbol_data(obj_fp, "Disassembly of section .bss:", &mem->data);
+
+    // extract the symbols from BSS
+    get_symbol_data(obj_fp, "random bullshit go", &mem->bss);
+
 
     pclose(obj_fp);
 }

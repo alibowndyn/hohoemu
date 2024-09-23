@@ -11,11 +11,21 @@
 #define NOBODY_GID 65534
 
 
+struct Symbol
+{
+    char *name;
+    uint64_t addr;
+    uint64_t size;
+    uint8_t *bytes;
+};
+
 struct MemorySegment
 {
     uint64_t addr;
-    uint8_t *bytes;
     uint64_t size;
+    uint8_t *bytes;
+    uint16_t num_symbols;
+    struct Symbol **symbols;
 };
 
 struct TextSegment
