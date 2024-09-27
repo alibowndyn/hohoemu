@@ -45,16 +45,26 @@ class Deserializer():
         text_data = list(map(int, lines[5].split(' ')))
         rodata_data = list(map(int, lines[6].split(' ')))
 
+        rodata_symbols: list[Symbol] = []
+        for line in lines[7:]:
+            parts = line.split(' ')
+            sym_bytes = list(map(int, parts[2:]))
+            rodata_symbols.append(Symbol(parts[1], int(parts[0]), len(sym_bytes), sym_bytes))
+
         self._program.static_mem = StaticMemory(
             text=TextSegment(
                 main_addr=int(lines[4]),
                 addr=text_data[0],
                 size=text_data[1],
-                bytes=text_data[2:]),
+                bytes=text_data[3:],
+                num_symbols=text_data[2],
+                symbols=[]),
             rodata=MemorySegment(
                 addr=rodata_data[0],
                 size=rodata_data[1],
-                bytes=rodata_data[2:]))
+                bytes=text_data[3:],
+                num_symbols=rodata_data[2],
+                symbols=rodata_symbols))
 
     def deserialize_insns_execution_contexts(self, contexts: list) -> None:
         for c in contexts:
@@ -63,7 +73,6 @@ class Deserializer():
             context = create_empty_execution_context()
 
             line_parts = lines[0].split(' ')
-            print(line_parts)
             if (line_parts[0][0] == '#'):
                 self._program.contexts.append(context)
                 self._program.ex_info.has_stack_overflowed = 1
@@ -80,15 +89,32 @@ class Deserializer():
 
             data_data = list(map(int, lines[2].split(' ')))
             bss_data = list(map(int, lines[3].split(' ')))
+
+            data_symbols: list[Symbol] = []
+            for line in lines[5:5+data_data[2]]:
+                parts = line.split(' ')
+                sym_bytes = list(map(int, parts[2:]))
+                data_symbols.append(Symbol(parts[1], int(parts[0]), len(sym_bytes), sym_bytes))
+
+            bss_symbols: list[Symbol] = []
+            for line in lines[5+data_data[2]:5+data_data[2]+bss_data[2]]:
+                parts = line.split(' ')
+                sym_bytes = list(map(int, parts[2:]))
+                bss_symbols.append(Symbol(parts[1], int(parts[0]), len(sym_bytes), sym_bytes))
+
             context.dynamic_mem = DynamicMemory(
                     data=MemorySegment(
                         addr=data_data[0],
                         size=data_data[1],
-                        bytes=data_data[2:]),
+                        bytes=data_data[3:],
+                        num_symbols=data_data[2],
+                        symbols=data_symbols),
                     bss=MemorySegment(
                         addr=bss_data[0],
                         size=bss_data[1],
-                        bytes=bss_data[2:]))
+                        bytes=bss_data[3:],
+                        num_symbols=bss_data[2],
+                        symbols=bss_symbols))
 
             insn_data = list(map(int, lines[4].split(' ')))
             context.insn = Instruction(

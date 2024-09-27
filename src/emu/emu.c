@@ -42,34 +42,6 @@ static uc_err _uc_err_check(uc_err err, const char *expr)
 
 
 
-const int regs[] = { UC_X86_REG_RAX, UC_X86_REG_RBX, UC_X86_REG_RCX, UC_X86_REG_RDX, UC_X86_REG_RFLAGS,
-                     UC_X86_REG_RIP, UC_X86_REG_RSP, UC_X86_REG_RBP, UC_X86_REG_RDI, UC_X86_REG_RSI,
-                     UC_X86_REG_R8,  UC_X86_REG_R9,  UC_X86_REG_R10, UC_X86_REG_R11, UC_X86_REG_R12,
-                     UC_X86_REG_R13,  UC_X86_REG_R14, UC_X86_REG_R15 };
-
-#define NUM_OF_REGISTERS_TO_READ    ( (int)(sizeof(regs) / sizeof(int)) )
-uint64_t reg_contents[NUM_OF_REGISTERS_TO_READ];
-
-#define REG_RAX     reg_contents[0]
-#define REG_RBX     reg_contents[1]
-#define REG_RCX     reg_contents[2]
-#define REG_RDX     reg_contents[3]
-#define REG_RFLAGS  reg_contents[4]
-#define REG_RIP     reg_contents[5]
-#define REG_RSP     reg_contents[6]
-#define REG_RBP     reg_contents[7]
-#define REG_RDI     reg_contents[8]
-#define REG_RSI     reg_contents[9]
-#define REG_R8      reg_contents[10]
-#define REG_R9      reg_contents[11]
-#define REG_R10     reg_contents[12]
-#define REG_R11     reg_contents[13]
-#define REG_R12     reg_contents[14]
-#define REG_R13     reg_contents[15]
-#define REG_R14     reg_contents[16]
-#define REG_R15     reg_contents[17]
-
-
 uint8_t stack_overflowed = 0;
 static void check_stack_overflow(uint64_t address)
 {
@@ -93,14 +65,14 @@ static void check_valid_stack_pointer()
 }
 
 /**
- * @brief Read and save the contents of the registers listed in `regs`
+ * @brief Read and save the contents of the registers listed in `x86_64_registers`
  */
 static void read_registers()
 {
     puts("");
     for (int i = 0; i < NUM_OF_REGISTERS_TO_READ; i++)
     {
-        if (UC_ERR_CHECK( uc_reg_read(uc, regs[i], &reg_contents[i]) ))
+        if (UC_ERR_CHECK( uc_reg_read(uc, x86_64_registers[i], &reg_contents[i]) ))
             ABORT()
 
         printf("     %ld\n", reg_contents[i]);
@@ -125,6 +97,25 @@ static void read_stack()
     }
 
     puts("");
+}
+
+static void write_symbols_from_dynamic_memory_segments()
+{
+    for (int i = 0; i < mem_layout.data.num_symbols; i++)
+    {
+        if (UC_ERR_CHECK( uc_mem_read(uc, mem_layout.data.symbols[i]->addr, mem_layout.data.symbols[i]->bytes, mem_layout.data.symbols[i]->size) ) )
+            ABORT()
+
+        write_symbol_info(mem_layout.data.symbols[i]);
+    }
+
+    for (int i = 0; i < mem_layout.bss.num_symbols; i++)
+    {
+        if (UC_ERR_CHECK( uc_mem_read(uc, mem_layout.bss.symbols[i]->addr, mem_layout.bss.symbols[i]->bytes, mem_layout.bss.symbols[i]->size) ) )
+            ABORT()
+
+        write_symbol_info(mem_layout.bss.symbols[i]);
+    }
 }
 
 static int should_stop_emulation(uint64_t address, uint32_t size, __uint128_t insn_bytecode)
@@ -171,7 +162,6 @@ static void hook_insn(uc_engine *uc, uint64_t address, uint32_t size, void *user
     write_memory_layout(&mem_layout, STACK_START_ADDR, STACK_END_ADDR, 0);
 
 
-
     int index = index_of_memory_address(assembly.addresses, assembly.num_lines, address);
     if ( index != -1 )
         printf("Isns at address[%#lx]: %s\n", assembly.addresses[index], assembly.lines[index]);
@@ -184,6 +174,8 @@ static void hook_insn(uc_engine *uc, uint64_t address, uint32_t size, void *user
 
     write_instruction_info(index, size, insn_bytecode);
     check_valid_stack_pointer();
+
+    write_symbols_from_dynamic_memory_segments();
 
     // if we are about to execute the last `ret` instruction, stop the emulation
     if ( should_stop_emulation(address, size, insn_bytecode) )

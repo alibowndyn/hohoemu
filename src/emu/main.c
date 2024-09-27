@@ -17,12 +17,36 @@ struct AssemblyText assembly   = {0};
 
 
 
+void dispose_segment(struct MemorySegment *seg)
+{
+    free(seg->bytes);
+    seg->bytes = NULL;
+
+    for (int i = 0; i < seg->num_symbols; i++)
+    {
+        free(seg->symbols[i]->name);
+        seg->symbols[i]->name = NULL;
+
+        free(seg->symbols[i]->bytes);
+        seg->symbols[i]->bytes = NULL;
+
+        free(seg->symbols[i]);
+        seg->symbols[i] = NULL;
+    }
+
+    free(seg->symbols);
+    seg->symbols = NULL;
+}
+
 void dispose(struct MemoryLayout *mem, struct AssemblyText *assembly)
 {
     free(mem->text.seg.bytes);
-    free(mem->rodata.bytes);
-    free(mem->data.bytes);
-    free(mem->bss.bytes);
+    mem->text.seg.bytes = NULL;
+
+    dispose_segment(&mem->rodata);
+    dispose_segment(&mem->data);
+    dispose_segment(&mem->bss);
+
 
     for (int i = 0; i < assembly->num_lines; i++)
     {
@@ -39,7 +63,7 @@ void dispose(struct MemoryLayout *mem, struct AssemblyText *assembly)
 
 int main(int argc, char *argv[])
 {
-    #define DEBUG
+    //#define DEBUG
     #ifdef DEBUG
     argc = 2;
     #endif
@@ -57,7 +81,7 @@ int main(int argc, char *argv[])
     }
 
     #ifdef DEBUG
-    system(GCC_PATH " -g ~/Desktop/assembly_files/all_segments.s -g -o " COMPILED_FILE_PATH " -no-pie");
+    system(GCC_PATH " -g ~/Desktop/assembly_files/printf_call.s -g -o " COMPILED_FILE_PATH " -no-pie");
     #else
     pid_t pid = fork();
 
@@ -80,12 +104,12 @@ int main(int argc, char *argv[])
     {
         // wait for the child process to die
         waitpid(pid, NULL, 0);
+        // successful compilation, resume normal program execution
     }
     #endif
 
-    // successful compilation, resume program execution
-    int insn_cnt = 0;
 
+    int insn_cnt = 0;
 
     // after compiling the assembly file, we disassemble it using objdump
     // and process the resulting output
@@ -123,12 +147,11 @@ int main(int argc, char *argv[])
     emulate(&mem_layout.text);
     // #######################################################
 
-
     printf("Number of instructions executed: %d\n\n", insn_cnt);
-
 
     destroy_serializer();
     dispose(&mem_layout, &assembly);
+
 
     return EXIT_SUCCESS;
 }

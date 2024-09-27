@@ -15,6 +15,8 @@ void write_assembly_instructions_and_addresses(struct AssemblyText *assembly);
 
 void write_instruction_info(int index, uint32_t size, __uint128_t bytecode);
 
+void write_symbol_info(struct Symbol *symbol);
+
 void write_registers(int size, uint64_t *registers);
 
 void write_stack_content(int size, uint8_t *bytes);

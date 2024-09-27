@@ -17,7 +17,7 @@ FILE *emu_out_fp;
 
 static void print_segment(struct MemorySegment *seg)
 {
-    PRINT_TO_FILE("%ld %ld ", seg->addr, seg->size)
+    PRINT_TO_FILE("%ld %ld %d ", seg->addr, seg->size, seg->num_symbols)
 
     for (uint32_t i = 0; i < seg->size; i++)
     {
@@ -51,7 +51,12 @@ void write_memory_layout(struct MemoryLayout *mem, uint64_t stack_start_addr, ui
             mem->memory_start_addr, mem->memory_end_addr, stack_start_addr, stack_end_addr, mem->text.main_addr);
 
         print_segment(&mem->text.seg);
+
         print_segment(&mem->rodata);
+        for (int i = 0; i < mem->rodata.num_symbols; i++)
+        {
+            write_symbol_info(mem->rodata.symbols[i]);
+        }
 
         write_separator();
     }
@@ -79,6 +84,17 @@ void write_instruction_info(int index, uint32_t size, __uint128_t bytecode)
     for (uint32_t i = 0; i < size; i++)
     {
         PRINT_TO_FILE("%d%s", (uint32_t)((bytecode >> (i * 8)) & 0xff), (i == size-1) ? "" : " ");
+    }
+
+    PRINT_TO_FILE("\n")
+}
+
+void write_symbol_info(struct Symbol *symbol)
+{
+    PRINT_TO_FILE("%ld %s ", symbol->addr, symbol->name);
+    for (int i = 0; i < symbol->size; i++)
+    {
+        PRINT_TO_FILE("%u%s", symbol->bytes[i], (i == symbol->size-1) ? "" : " ")
     }
 
     PRINT_TO_FILE("\n")
