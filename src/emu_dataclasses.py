@@ -24,6 +24,7 @@ class Symbol:
 
 @dataclass
 class MemorySegment:
+    name: str
     addr: int
     size: int
     bytes: list[int]
@@ -189,8 +190,8 @@ def create_empty_executed_program() -> ExecutedProgram:
             text_start_addr=0, bss_end_addr=0,
             stack_start_addr=0, stack_end_addr=0),
         static_mem=StaticMemory(
-            text=TextSegment(main_addr=0, addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
-            rodata=MemorySegment(addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
+            text=TextSegment(main_addr=0, name='text', addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
+            rodata=MemorySegment(name='rodata', addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
         contexts=[],
         ex_info=RuntimeExceptionInfo(index=0, has_stack_overflowed=0, addr=0, is_rsp_invalid=0))
 
@@ -198,8 +199,8 @@ def create_empty_execution_context() -> ExecutionContext:
     return ExecutionContext(
             insn=Instruction(index=0, text='', addr=0, size=0, bytecode=[]),
             dynamic_mem=DynamicMemory(
-                data=MemorySegment(addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
-                bss=MemorySegment(addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
+                data=MemorySegment(name='data', addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
+                bss=MemorySegment(name='bss', addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
             regs=[],
             stack=Stack(content=[]))
 

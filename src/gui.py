@@ -16,19 +16,32 @@ symbol_row_color = [7, 126, 22, 255]
 all_sym_row_items = []
 
 
-def step(sender, app_data, user_data: int) -> None:
-    global program, counter, lines_of_code, rsp_row_idx
-    counter += int(user_data)
 
-    has_program_executed = counter >= len(program.contexts) - 1
+def build_symbol_table_for_segment(seg: MemorySegment):
+    for sym in [sym for sym in seg.symbols if sym.name not in irrelevant_symbols]:
+        with dpg.table_row(parent=f'#{ seg.name }_syms', tag=f'#{ sym.name }_row') as row:
 
-    dpg.set_value('#insn_cnt_info', counter)
+            all_sym_row_items.append(row)
+            dpg.add_selectable(label=sym.name, indent=5, span_columns=True, callback=show_symbol_parts, user_data=sym)
 
-    dpg.configure_item('#next', enabled=not has_program_executed)
-    dpg.configure_item('#prev', enabled=(counter != 0))
+        for i, byte in enumerate(sym.bytes):
+            with dpg.table_row(parent=f'#{ seg.name }_syms', tag=f'#{ sym.name }_hidden_{ i }', show=False) as row:
 
-    dpg.configure_item(item="#code", default_value=lines_of_code[program.contexts[counter].insn.index])
+                all_sym_row_items.append(row)
 
+                dpg.add_text(f'{sym.addr + i:#08x}', indent=15)
+                dpg.add_text(f'{byte:#04x}', tag=f'#{ sym.name }_val_hex_{ i }', indent=30)
+                dpg.add_text(byte, tag=f'#{ sym.name }_val_dec_{ i }', indent=50)
+
+
+def update_code():
+    global program, counter, lines_of_code
+
+    dpg.configure_item(item="#code", items=lines_of_code, default_value=lines_of_code[program.contexts[counter].insn.index])
+
+
+def update_registers():
+    global program, counter
 
     for i, reg in enumerate(main_regs):
         val = program.contexts[counter].regs.rdict[reg]
@@ -48,36 +61,74 @@ def step(sender, app_data, user_data: int) -> None:
             dpg.set_value(f'#{ reg_part }_val_dec', val)
 
 
-    for i, col_idx in enumerate(range(stack_num_table_rows)):
-        dpg.set_value(f'#stack_row_addr{col_idx:03}', f'{program.mem_layout.stack_start_addr -8 - i:#06x}:')
-        dpg.set_value(f'#stack_row_val_hex{col_idx:03}', f'{program.contexts[counter].stack.content[i]:#04x}')
-        dpg.set_value(f'#stack_row_val_dec{col_idx:03}', f'{program.contexts[counter].stack.content[i]:3}')
+def update_stack():
+    global program, counter, rsp_row_idx
+
+    for i, row_idx in enumerate(range(stack_num_table_rows)):
+        print(hex(program.mem_layout.stack_end_addr))
+        dpg.set_value(f'#stack_row_addr{row_idx:03}', f'{program.mem_layout.stack_start_addr - 128 + i:#06x}:')
+        dpg.set_value(f'#stack_row_val_hex{row_idx:03}', f'{program.contexts[counter].stack.content[i]:#04x}')
+        dpg.set_value(f'#stack_row_val_dec{row_idx:03}', f'{program.contexts[counter].stack.content[i]:3}')
 
     dpg.unhighlight_table_row('#stack', rsp_row_idx)
     rsp_row_idx = stack_num_table_rows - abs(program.contexts[counter].regs.RSP - program.mem_layout.stack_start_addr)
     dpg.highlight_table_row('#stack', rsp_row_idx, rsp_row_highlight_color)
 
-    # update .data segment symbols
-    for sym in [sym for sym in program.contexts[counter].dynamic_mem.data.symbols if sym.name not in irrelevant_symbols]:
 
-        # dpg.set_item_label(f'#{ sym.name }_val_hex', label='0x0')
-        # dpg.set_item_label(f'#{ sym.name }_val_dec', label='0')
+def update_symbols_for_segment(seg: MemorySegment):
+    global program, counter
 
-        for i, byte in enumerate(sym.bytes):
-            dpg.set_value(item=f'#{ sym.name }_val_hex_{ i }', value=f'{byte:#04x}')
-            dpg.set_value(item=f'#{ sym.name }_val_dec_{ i }', value=f'{ byte }')
-
-    # update .bss segment symbols
-    for sym in [sym for sym in program.contexts[counter].dynamic_mem.bss.symbols if sym.name not in irrelevant_symbols]:
-
-        # dpg.set_item_label(f'#{ sym.name }_val_hex', label='0x0')
-        # dpg.set_item_label(f'#{ sym.name }_val_dec', label='0')
-
+    for sym in [sym for sym in seg.symbols if sym.name not in irrelevant_symbols]:
         for i, byte in enumerate(sym.bytes):
             dpg.set_value(item=f'#{ sym.name }_val_hex_{ i }', value=f'{byte:#04x}')
             dpg.set_value(item=f'#{ sym.name }_val_dec_{ i }', value=f'{ byte }')
 
 
+def step(sender, app_data, user_data: int) -> None:
+    global program, counter, lines_of_code, rsp_row_idx
+
+    counter += int(user_data)
+    dpg.set_value('#insn_cnt_info', counter)
+
+    has_program_executed = counter >= len(program.contexts) - 1
+    dpg.configure_item('#next', enabled=(not has_program_executed))
+    dpg.configure_item('#prev', enabled=(counter != 0))
+
+    update_code()
+    update_registers()
+    update_stack()
+
+    update_symbols_for_segment(program.contexts[counter].dynamic_mem.data)
+    update_symbols_for_segment(program.contexts[counter].dynamic_mem.bss)
+
+
+def show_register_parts(sender, app_data, user_data):
+    for reg_part in reg_subparts[user_data]:
+        table_row = f'#{ reg_part }_hidden'
+
+        if not dpg.is_item_shown(table_row):
+            dpg.show_item(table_row)
+        else:
+            dpg.hide_item(table_row)
+
+def show_symbol_parts(_, __, user_data: Symbol):
+    for i in range(len(user_data.bytes)):
+        table_row = f'#{ user_data.name }_hidden_{ i }'
+
+        if not dpg.is_item_shown(table_row):
+            dpg.show_item(table_row)
+        else:
+            dpg.hide_item(table_row)
+
+def show_all_subregs():
+    for reg in main_regs:
+        for reg_part in reg_subparts[reg]:
+            dpg.show_item(f'#{ reg_part }_hidden')
+
+def hide_all_subregs():
+    for reg in main_regs:
+        for reg_part in reg_subparts[reg]:
+            dpg.hide_item(f'#{ reg_part }_hidden')
 
 
 def start_gui():
@@ -140,104 +191,29 @@ def start_gui():
             # we are running in a normal Python environment
             bundle_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+        # compile the selected assembly file
         call(f'{ bundle_dir }/asemu { file_path }' + silencer, shell=True)
 
+        # process the file output by the emulator
         program = des.get_executed_program()
 
         dpg.configure_item('#next', enabled=True)
 
         lines_of_code = [f'{ addr:#08x}:\t{ program.code.lines[i] }' for i, addr in enumerate(program.code.addresses)]
-        dpg.configure_item(item="#code", items=lines_of_code, default_value=lines_of_code[program.contexts[counter].insn.index])
 
 
-        for i, reg in enumerate(main_regs):
-            val = program.contexts[counter].regs.rdict[reg]
-
-            dpg.set_item_label(f'#{ reg }_val_hex', f'{val:#x}')
-            dpg.set_item_label(f'#{ reg }_val_dec', val)
-
-            for j in range(len(reg_subparts[reg])):
-                reg_part = reg_subparts[reg][j]
-
-                if reg_part in flags:
-                    val = extract_rflag_bits(program.contexts[counter].regs.rdict['RFLAGS'], reg_part)
-                else:
-                    val = program.contexts[counter].regs.rdict[reg_part]
-
-                dpg.set_value(f'#{ reg_part }_val_hex', f'{val:#x}')
-                dpg.set_value(f'#{ reg_part }_val_dec', val)
+        update_code()
+        update_registers()
+        update_stack()
 
 
-        for i, row_idx in enumerate(range(stack_num_table_rows)):
-            dpg.set_value(f'#stack_row_addr{row_idx:03}', f'{program.mem_layout.stack_start_addr - 8 - i:#06x}:')
-            dpg.set_value(f'#stack_row_val_hex{row_idx:03}', f'{program.contexts[counter].stack.content[i]:#04x}')
-            dpg.set_value(f'#stack_row_val_dec{row_idx:03}', f'{program.contexts[counter].stack.content[i]:3}')
-
-
-        dpg.unhighlight_table_row('#stack', rsp_row_idx)
-        rsp_row_idx = stack_num_table_rows - abs(program.contexts[counter].regs.RSP - program.mem_layout.stack_start_addr)
-        dpg.highlight_table_row('#stack', rsp_row_idx, rsp_row_highlight_color)
-
-
-        # delete previous symbols so they won't be duplicated
+        # delete all previous symbols so they won't be duplicated
         for row_item in all_sym_row_items:
             dpg.delete_item(row_item)
 
-        for sym in [sym for sym in program.static_mem.rodata.symbols if sym.name not in irrelevant_symbols]:
-            with dpg.table_row(parent='#rodata_syms', tag=f'#{ sym.name }_row'):
-
-                dpg.add_selectable(label=sym.name, indent=5, span_columns=True, callback=show_symbol_parts, user_data=sym)
-                # dpg.add_selectable(label='0x0', tag=f'#{ sym.name }_val_hex', indent=50)
-                # dpg.add_selectable(label='0', tag=f'#{ sym.name }_val_dec', indent=70)
-
-                all_sym_row_items.append(f'#{ sym.name }_row')
-
-            for i, byte in enumerate(sym.bytes):
-                with dpg.table_row(parent='#rodata_syms', tag=f'#{ sym.name }_hidden_{ i }', show=False):
-
-                    all_sym_row_items.append(f'#{ sym.name }_hidden_{ i }')
-
-                    dpg.add_text(f'{sym.addr + i:#08x}', indent=15)
-                    dpg.add_text(f'{byte:#04x}', tag=f'#{ sym.name }_val_hex_{ i }', indent=30)
-                    dpg.add_text(byte, tag=f'#{ sym.name }_val_dec_{ i }', indent=50)
-
-
-        for sym in [sym for sym in program.contexts[counter].dynamic_mem.data.symbols if sym.name not in irrelevant_symbols]:
-            with dpg.table_row(parent='#data_syms', tag=f'#{ sym.name }_row'):
-
-                dpg.add_selectable(label=sym.name, indent=5, span_columns=True, callback=show_symbol_parts, user_data=sym)
-                # dpg.add_selectable(label='0x0', tag=f'#{ sym.name }_val_hex', indent=50)
-                # dpg.add_selectable(label='0', tag=f'#{ sym.name }_val_dec', indent=70)
-
-                all_sym_row_items.append(f'#{ sym.name }_row')
-
-            for i, byte in enumerate(sym.bytes):
-                with dpg.table_row(parent='#data_syms', tag=f'#{ sym.name }_hidden_{ i }', show=False):
-
-                    all_sym_row_items.append(f'#{ sym.name }_hidden_{ i }')
-
-                    dpg.add_text(f'{sym.addr + i:#08x}', indent=15)
-                    dpg.add_text(f'{byte:#04x}', tag=f'#{ sym.name }_val_hex_{ i }', indent=30)
-                    dpg.add_text(byte, tag=f'#{ sym.name }_val_dec_{ i }', indent=50)
-
-
-        for sym in [sym for sym in program.contexts[counter].dynamic_mem.bss.symbols if sym.name not in irrelevant_symbols]:
-            with dpg.table_row(parent='#bss_syms', tag=f'#{ sym.name }_row'):
-
-                dpg.add_selectable(label=sym.name, indent=5, span_columns=True, callback=show_symbol_parts, user_data=sym)
-                # dpg.add_selectable(label='0x0', tag=f'#{ sym.name }_val_hex', indent=50)
-                # dpg.add_selectable(label='0', tag=f'#{ sym.name }_val_dec', indent=70)
-
-                all_sym_row_items.append(f'#{ sym.name }_row')
-
-            for i, byte in enumerate(sym.bytes):
-                with dpg.table_row(parent='#bss_syms', tag=f'#{ sym.name }_hidden_{ i }', show=False):
-
-                    all_sym_row_items.append(f'#{ sym.name }_hidden_{ i }')
-
-                    dpg.add_text(f'{sym.addr + i:#08x}', indent=15)
-                    dpg.add_text(f'{byte:#04x}', tag=f'#{ sym.name }_val_hex_{ i }', indent=30)
-                    dpg.add_text(byte, tag=f'#{ sym.name }_val_dec_{ i }', indent=50)
+        build_symbol_table_for_segment(program.static_mem.rodata)
+        build_symbol_table_for_segment(program.contexts[counter].dynamic_mem.data)
+        build_symbol_table_for_segment(program.contexts[counter].dynamic_mem.bss)
 
 
     def cancel_callback(sender, app_data):
@@ -245,33 +221,7 @@ def start_gui():
         print("Sender: ", sender)
         print("App Data: ", app_data)
 
-    def show_register_parts(sender, app_data, user_data):
-        for reg_part in reg_subparts[user_data]:
-            table_row = f'#{ reg_part }_hidden'
 
-            if not dpg.is_item_shown(table_row):
-                dpg.show_item(table_row)
-            else:
-                dpg.hide_item(table_row)
-
-    def show_symbol_parts(sender, app_data, user_data: Symbol):
-        for i in range(len(user_data.bytes)):
-            table_row = f'#{ user_data.name }_hidden_{ i }'
-
-            if not dpg.is_item_shown(table_row):
-                dpg.show_item(table_row)
-            else:
-                dpg.hide_item(table_row)
-
-    def show_all_subregs():
-        for reg in main_regs:
-            for reg_part in reg_subparts[reg]:
-                dpg.show_item(f'#{ reg_part }_hidden')
-
-    def hide_all_subregs():
-        for reg in main_regs:
-            for reg_part in reg_subparts[reg]:
-                dpg.hide_item(f'#{ reg_part }_hidden')
 
 
     with dpg.file_dialog(directory_selector=False, show=False, callback=dir_open_callback, tag="#file_dialog", width=800 ,height=500):
@@ -402,11 +352,6 @@ def start_gui():
             dpg.add_text('0', tag='#insn_cnt_info')
 
 
-
-
-
-
-
     # Start the Dear PyGui rendering loop
     dpg.create_viewport(title='Hohoemu', width=1750, height=900)
     dpg.setup_dearpygui()
@@ -416,12 +361,6 @@ def start_gui():
     dpg.set_viewport_resize_callback(viewport_resize_callback)
     # Adjust the window size on startup to fit the viewport
     update_positions()
-
-    # while dpg.is_dearpygui_running():
-    #     jobs = dpg.get_callback_queue() # retrieves and clears queue
-    #     dpg.run_callbacks(jobs)
-    #     dpg.render_dearpygui_frame()
-
 
     dpg.start_dearpygui()
     dpg.destroy_context()

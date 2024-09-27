@@ -53,6 +53,7 @@ class Deserializer():
 
         self._program.static_mem = StaticMemory(
             text=TextSegment(
+                name='text',
                 main_addr=int(lines[4]),
                 addr=text_data[0],
                 size=text_data[1],
@@ -60,6 +61,7 @@ class Deserializer():
                 num_symbols=text_data[2],
                 symbols=[]),
             rodata=MemorySegment(
+                name='rodata',
                 addr=rodata_data[0],
                 size=rodata_data[1],
                 bytes=text_data[3:],
@@ -104,12 +106,14 @@ class Deserializer():
 
             context.dynamic_mem = DynamicMemory(
                     data=MemorySegment(
+                        name='data',
                         addr=data_data[0],
                         size=data_data[1],
                         bytes=data_data[3:],
                         num_symbols=data_data[2],
                         symbols=data_symbols),
                     bss=MemorySegment(
+                        name='bss',
                         addr=bss_data[0],
                         size=bss_data[1],
                         bytes=bss_data[3:],
