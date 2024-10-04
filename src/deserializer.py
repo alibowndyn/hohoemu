@@ -85,7 +85,6 @@ class Deserializer():
             rdict = {k : v for k, v in zip(list(Registers.__dataclass_fields__.keys())[:-1], reg_values)}
             context.regs = Registers(*reg_values, rdict)
 
-
             context.stack.content.extend(map(int, lines[1].split(' ')))
 
 

@@ -29,6 +29,8 @@ static const int x86_64_registers[] = {
     UC_X86_REG_RDX,    UC_X86_REG_EDX,    UC_X86_REG_DX,   UC_X86_REG_DH,   UC_X86_REG_DL,
     UC_X86_REG_RSI,    UC_X86_REG_ESI,    UC_X86_REG_SI,   UC_X86_REG_SIL,
     UC_X86_REG_RDI,    UC_X86_REG_EDI,    UC_X86_REG_DI,   UC_X86_REG_DIL,
+    UC_X86_REG_RBP,    UC_X86_REG_EBP,    UC_X86_REG_BP,   UC_X86_REG_BPL,
+    UC_X86_REG_RSP,    UC_X86_REG_ESP,    UC_X86_REG_SP,   UC_X86_REG_SPL,
     UC_X86_REG_R8,     UC_X86_REG_R8D,    UC_X86_REG_R8W,  UC_X86_REG_R8B,
     UC_X86_REG_R9,     UC_X86_REG_R9D,    UC_X86_REG_R9W,  UC_X86_REG_R9B,
     UC_X86_REG_R10,    UC_X86_REG_R10D,   UC_X86_REG_R10W, UC_X86_REG_R10B,
@@ -38,8 +40,6 @@ static const int x86_64_registers[] = {
     UC_X86_REG_R14,    UC_X86_REG_R14D,   UC_X86_REG_R14W, UC_X86_REG_R14B,
     UC_X86_REG_R15,    UC_X86_REG_R15D,   UC_X86_REG_R15W, UC_X86_REG_R15B,
     UC_X86_REG_RIP,    UC_X86_REG_EIP,    UC_X86_REG_IP,
-    UC_X86_REG_RSP,    UC_X86_REG_ESP,    UC_X86_REG_SP,   UC_X86_REG_SPL,
-    UC_X86_REG_RBP,    UC_X86_REG_EBP,    UC_X86_REG_BP,   UC_X86_REG_BPL,
     UC_X86_REG_RFLAGS, UC_X86_REG_EFLAGS, UC_X86_REG_FLAGS,
     UC_X86_REG_CS,     UC_X86_REG_DS,     UC_X86_REG_SS,   UC_X86_REG_ES,   UC_X86_REG_FS, UC_X86_REG_GS,
 };
@@ -48,8 +48,8 @@ static const int x86_64_registers[] = {
 static uint64_t reg_contents[NUM_OF_REGISTERS_TO_READ];
 
 #define REG_RAX     reg_contents[0]
-#define REG_RIP     reg_contents[60]
-#define REG_RSP     reg_contents[63]
+#define REG_RSP     reg_contents[32]
+#define REG_RIP     reg_contents[68]
 
 
 

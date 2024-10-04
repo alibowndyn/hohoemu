@@ -89,6 +89,16 @@ class Registers:
     DI: int
     DIL: int
 
+    RBP: int
+    EBP: int
+    BP: int
+    BPL: int
+
+    RSP: int
+    ESP: int
+    SP: int
+    SPL: int
+
     R8: int
     R8D: int
     R8W: int
@@ -132,16 +142,6 @@ class Registers:
     RIP: int
     EIP: int
     IP: int
-
-    RSP: int
-    ESP: int
-    SP: int
-    SPL: int
-
-    RBP: int
-    EBP: int
-    BP: int
-    BPL: int
 
     RFLAGS: int
     EFLAGS: int
@@ -207,8 +207,8 @@ def create_empty_execution_context() -> ExecutionContext:
 
 main_regs = [
     'RAX', 'RBX', 'RCX', 'RDX', 'RSI', 'RDI',
-    'R8', 'R9', 'R10', 'R11', 'R12', 'R13',
-    'R14', 'R15', 'RIP', 'RBP', 'RSP', 'RFLAGS',
+    'RBP', 'RSP', 'R8', 'R9', 'R10', 'R11',
+    'R12', 'R13', 'R14', 'R15', 'RIP', 'RFLAGS',
 #   'CS', 'DS', 'SS', 'ES', 'FS', 'GS'
 ]
 
@@ -221,6 +221,8 @@ reg_subparts = {
     'RDX': ['EDX', 'DX', 'DH', 'DL'],
     'RSI': ['ESI', 'SI', 'SIL'],
     'RDI': ['EDI', 'DI', 'DIL'],
+    'RBP': ['EBP', 'BP', 'BPL'],
+    'RSP': ['ESP', 'SP', 'SPL'],
     'R8':  ['R8D', 'R8W', 'R8B'],
     'R9':  ['R9D', 'R9W', 'R9B'],
     'R10': ['R10D', 'R10W', 'R10B'],
@@ -230,8 +232,6 @@ reg_subparts = {
     'R14': ['R14D', 'R14W', 'R14B'],
     'R15': ['R15D', 'R15W', 'R15B'],
     'RIP': ['EIP', 'IP'],
-    'RSP': ['ESP', 'SP', 'SPL'],
-    'RBP': ['EBP', 'BP', 'BPL'],
     'RFLAGS': flags,
     'CS': [],
     'DS': [],
