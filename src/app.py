@@ -3,7 +3,9 @@ from gui import *
 
 
 def main():
-    start_gui()
+    gui = GUI(1750, 900)
+
+
 
 
 

@@ -4,57 +4,101 @@ from dataclasses import dataclass
 
 @dataclass
 class AssemblyCode:
+    '''A representation of the assembly code of a program.'''
+
     lines: list[str]
+    '''The lines of the assembly code.'''
     addresses: list[int]
+    '''The addresses of the instructions.'''
     num_lines: int
+    '''The number of lines in the assembly code.'''
 
 @dataclass
 class MemoryLayout:
+    '''A representation of the memory layout of a program.'''
+
     text_start_addr: int
+    '''The starting address of the .text segment.'''
     bss_end_addr: int
+    '''The ending address of the .bss segment.'''
     stack_start_addr: int
+    '''The starting address of the stack.'''
     stack_end_addr: int
+    '''The ending address of the stack.'''
 
 @dataclass
 class Symbol:
+    '''A representation of a static data symbol.'''
+
     name: str
+    '''The name of the symbol.'''
     addr: int
+    '''The starting address of the symbol.'''
     size: int
+    '''The size of the symbol in bytes.'''
     bytes: list[int]
+    '''The content of the symbol.'''
 
 @dataclass
 class MemorySegment:
+    '''A representation of a memory segment.'''
+
     name: str
+    '''The name of the memory segment.'''
     addr: int
+    '''The starting address of the memory segment.'''
     size: int
+    '''The size of the memory segment in bytes.'''
     bytes: list[int]
+    '''The content of the memory segment.'''
     num_symbols: int
+    '''The number of symbols in the memory segment.'''
     symbols: list[Symbol]
+    '''The symbols in the memory segment.'''
 
 @dataclass
 class TextSegment(MemorySegment):
+    '''A representation of the .text segment of a program.'''
+
     main_addr: int
+    '''The address of the main function.'''
 
 @dataclass
 class StaticMemory:
+    '''A representation of the static memory of a program.'''
+
     text: TextSegment
+    '''The .text segment of the program.'''
     rodata: MemorySegment
+    '''The .rodata segment of the program.'''
 
 @dataclass
 class DynamicMemory:
+    '''A representation of the dynamic memory of a program.'''
+
     data: MemorySegment
+    '''The .data segment of the program.'''
     bss: MemorySegment
+    '''The .bss segment of the program.'''
 
 @dataclass
 class Instruction:
+    '''A representation of an instruction.'''
     index: int
+    '''The index of the current instruction in the list of execution contexts.'''
     text: str
+    '''The text of the instruction.'''
     addr: int
+    '''The starting address of the instruction in the .text segment.'''
     size: int
+    '''The size of the instruction in bytes.'''
     bytecode: list[int]
+    '''The bytecode of the instruction.'''
 
 @dataclass
 class Registers:
+    '''A representation of the registers.'''
+
     RAX: int
     EAX: int
     AX: int
@@ -158,100 +202,119 @@ class Registers:
 
 @dataclass
 class Stack:
+    '''A representation of the stack.'''
+
     content: list[int]
+    '''The content of the stack.'''
 
 @dataclass
 class ExecutionContext:
+    '''A representation of the state of a program at a given point in time.'''
+
     insn: Instruction
+    '''The current instruction.'''
     dynamic_mem: DynamicMemory
+    '''The state of the dynamic memory.'''
     regs: Registers
+    '''The current state of the registers.'''
     stack: Stack
+    '''The current state of the stack.'''
+    has_program_ended: bool
+    '''Whether the program has ended.'''
 
 @dataclass
 class RuntimeExceptionInfo:
+    '''A representation of the information about a runtime exception.'''
+
     index: int
+    '''The index of the context where the exception occurred.'''
     has_stack_overflowed: bool
+    '''Whether the stack has overflowed.'''
     addr: int
+    '''The value stored in the stack pointer.'''
     is_rsp_invalid: bool
+    '''Whether the stack pointer contains an invalid value.'''
 
 @dataclass
 class ExecutedProgram:
+    '''A representation of a program that has been executed.'''
+
+    index: int
+    '''The index of the current context in the list of execution contexts.'''
     code: AssemblyCode
+    '''The assembly code of the program.'''
     mem_layout: MemoryLayout
+    '''The memory layout of the program.'''
     static_mem: StaticMemory
+    '''The static memory of the program.'''
     contexts: list[ExecutionContext]
+    '''The execution contexts of the program.'''
     ex_info: RuntimeExceptionInfo
+    '''Information about a runtime exception.'''
+
+
+    def step(self, direction: int) -> int:
+        ''' Moves the instruction counter by `direction` steps.
+
+            Returns: 0 if the instruction counter is within bounds,
+                     1 if the instruction counter is at the beginning and
+                     2 if the instruction counter is at the end.'''
+
+        self.index += direction
+
+        if self.index >= len(self.contexts):
+            self.index = len(self.contexts) - 1
+            return 2
+
+        if self.index < 0:
+            self.index = 0
+            return 1
+
+        return 0
+
+    def get_current_context(self) -> ExecutionContext:
+        '''Returns the current execution context.'''
+
+        return self.contexts[self.index]
+
+    def get_flag(self, flag) -> int:
+        '''Extracts the specified flag from the RFLAGS register.'''
+
+        rflags = self.get_current_context().regs.RFLAGS
+        match flag:
+            case 'CF':
+                return (rflags >> 0) & 1    # Carry Flag
+            case 'PF':
+                return (rflags >> 2) & 1    # Parity Flag
+            case 'ZF':
+                return (rflags >> 6) & 1    # Zero Flag
+            case 'SF':
+                return (rflags >> 7) & 1    # Sign Flag
+            case 'OF':
+                return (rflags >> 11) & 1   # Overflow Flag
 
 
 def create_empty_executed_program() -> ExecutedProgram:
+    '''Creates an empty `ExecutedProgram`.'''
+
     return ExecutedProgram(
-        code=AssemblyCode(lines=[], addresses=[], num_lines=0),
-        mem_layout=MemoryLayout(
-            text_start_addr=0, bss_end_addr=0,
-            stack_start_addr=0, stack_end_addr=0),
-        static_mem=StaticMemory(
-            text=TextSegment(main_addr=0, name='text', addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
-            rodata=MemorySegment(name='rodata', addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
-        contexts=[],
-        ex_info=RuntimeExceptionInfo(index=0, has_stack_overflowed=0, addr=0, is_rsp_invalid=0))
+        0,
+        AssemblyCode([], [], 0),
+        MemoryLayout(0, 0, 0, 0),
+        StaticMemory(
+            TextSegment(0, 'text', 0, 0, [], 0, []),
+            MemorySegment('rodata', 0, 0, [], 0, [])),
+        [],
+        RuntimeExceptionInfo(0, False, 0, False))
 
 def create_empty_execution_context() -> ExecutionContext:
+    '''Creates an empty `ExecutionContext`.'''
+
     return ExecutionContext(
-            insn=Instruction(index=0, text='', addr=0, size=0, bytecode=[]),
-            dynamic_mem=DynamicMemory(
-                data=MemorySegment(name='data', addr=0, size=0, bytes=[], num_symbols=0, symbols=[]),
-                bss=MemorySegment(name='bss', addr=0, size=0, bytes=[], num_symbols=0, symbols=[])),
-            regs=[],
-            stack=Stack(content=[]))
-
-
-main_regs = [
-    'RAX', 'RBX', 'RCX', 'RDX', 'RSI', 'RDI',
-    'RBP', 'RSP', 'R8', 'R9', 'R10', 'R11',
-    'R12', 'R13', 'R14', 'R15', 'RIP', 'RFLAGS',
-#   'CS', 'DS', 'SS', 'ES', 'FS', 'GS'
-]
-
-flags = ['CF', 'PF', 'ZF', 'SF', 'OF']
-
-reg_subparts = {
-    'RAX': ['EAX', 'AX', 'AH', 'AL'],
-    'RBX': ['EBX', 'BX', 'BH', 'BL'],
-    'RCX': ['ECX', 'CX', 'CH', 'CL'],
-    'RDX': ['EDX', 'DX', 'DH', 'DL'],
-    'RSI': ['ESI', 'SI', 'SIL'],
-    'RDI': ['EDI', 'DI', 'DIL'],
-    'RBP': ['EBP', 'BP', 'BPL'],
-    'RSP': ['ESP', 'SP', 'SPL'],
-    'R8':  ['R8D', 'R8W', 'R8B'],
-    'R9':  ['R9D', 'R9W', 'R9B'],
-    'R10': ['R10D', 'R10W', 'R10B'],
-    'R11': ['R11D', 'R11W', 'R11B'],
-    'R12': ['R12D', 'R12W', 'R12B'],
-    'R13': ['R13D', 'R13W', 'R13B'],
-    'R14': ['R14D', 'R14W', 'R14B'],
-    'R15': ['R15D', 'R15W', 'R15B'],
-    'RIP': ['EIP', 'IP'],
-    'RFLAGS': flags,
-    'CS': [],
-    'DS': [],
-    'SS': [],
-    'ES': [],
-    'FS': [],
-    'GS': []
-}
-
-def extract_rflag_bits(rflags, flag):
-    match flag:
-        case 'CF':
-            return (rflags >> 0) & 1    # Carry Flag
-        case 'PF':
-            return (rflags >> 2) & 1    # Parity Flag
-        case 'ZF':
-            return (rflags >> 6) & 1    # Zero Flag
-        case 'SF':
-            return (rflags >> 7) & 1    # Sign Flag
-        case 'OF':
-            return (rflags >> 11) & 1   # Overflow Flag
-
-irrelevant_symbols = ['_IO_stdin_used', '__data_start', '__dso_handle', 'completed.0']
+        Instruction(0, '', 0, 0, []),
+        DynamicMemory(
+            MemorySegment('data', 0, 0, [], 0, []),
+            MemorySegment('bss', 0, 0, [], 0, [])),
+        [],
+        Stack([]),
+        False)
