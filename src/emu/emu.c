@@ -69,13 +69,16 @@ static void check_valid_stack_pointer()
  */
 static void read_registers()
 {
-    puts("");
+    puts("\n\n----------NEW EXECUTION CONTEXT----------"\
+         "\n\n!!!!THIS IS THE STATE OF THE PROCESSOR AFTER THE LAST EXECUTED INSTRUCTION!!!!"\
+         "\n\nREGISTERS:\n");
+
     for (int i = 0; i < NUM_OF_REGISTERS_TO_READ; i++)
     {
         if (UC_ERR_CHECK( uc_reg_read(uc, x86_64_registers[i], &reg_contents[i]) ))
             ABORT()
 
-        printf("     %ld\n", reg_contents[i]);
+        printf("    %10s:   %ld\n", x86_64_register_names[i], reg_contents[i]);
     }
 }
 

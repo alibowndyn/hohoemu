@@ -44,6 +44,29 @@ static const int x86_64_registers[] = {
     UC_X86_REG_CS,     UC_X86_REG_DS,     UC_X86_REG_SS,   UC_X86_REG_ES,   UC_X86_REG_FS, UC_X86_REG_GS,
 };
 
+static const char *x86_64_register_names[] = {
+    "RAX",    "EAX",    "AX",   "AH",   "AL",
+    "RBX",    "EBX",    "BX",   "BH",   "BL",
+    "RCX",    "ECX",    "CX",   "CH",   "CL",
+    "RDX",    "EDX",    "DX",   "DH",   "DL",
+    "RSI",    "ESI",    "SI",   "SIL",
+    "RDI",    "EDI",    "DI",   "DIL",
+    "RBP",    "EBP",    "BP",   "BPL",
+    "RSP",    "ESP",    "SP",   "SPL",
+    "R8",     "R8D",    "R8W",  "R8B",
+    "R9",     "R9D",    "R9W",  "R9B",
+    "R10",    "R10D",   "R10W", "R10B",
+    "R11",    "R11D",   "R11W", "R11B",
+    "R12",    "R12D",   "R12W", "R12B",
+    "R13",    "R13D",   "R13W", "R13B",
+    "R14",    "R14D",   "R14W", "R14B",
+    "R15",    "R15D",   "R15W", "R15B",
+    "RIP",    "EIP",    "IP",
+    "RFLAGS", "EFLAGS", "FLAGS",
+    "CS",     "DS",     "SS",   "ES",   "FS", "GS",
+};
+
+
 #define NUM_OF_REGISTERS_TO_READ    ( (int)(sizeof(x86_64_registers) / sizeof(int)) )
 static uint64_t reg_contents[NUM_OF_REGISTERS_TO_READ];
 

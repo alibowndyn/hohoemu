@@ -96,7 +96,8 @@ class GUI:
         dpg.delete_item(self.main_menubar.modal_container_window)
 
         self.file_path = app_data['file_path_name']
-        return_code = subprocess.call(f'{ get_program_dir() }/asemu { self.file_path } > /dev/null', shell=True)
+        return_code = subprocess.call(f'{ get_program_dir() }/asemu { self.file_path }',
+            shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         if return_code != 0:
             self.code_section.show_error_message()
@@ -163,11 +164,9 @@ class GUI:
         reached = False
         while not reached and not self.program_ended:
             if self.program.code.addresses[self.code_section.highlighted_row_idx] not in tmp_addrasses:
-                print('yes')
                 self.step(None, None, 1)
                 tmp_addrasses = [bp[1] for bp in breakpoints] #important
             else:
-                print('no')
                 reached = True
 
     def reset(self):

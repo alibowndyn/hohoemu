@@ -170,7 +170,6 @@ class CodeWindow():
             self.breakpoints.append(bp)
 
         sorted(self.breakpoints, key=lambda x: x[1])
-        print([hex(bp[1]) for bp in self.breakpoints])
 
     def indicate_program_end(self):
         if not dpg.does_item_exist(self.code_table):
