@@ -8,6 +8,7 @@ This project is an educational tool designed to help students learn x86-64 assem
   * Visual indication of the current instructions to be executed
   * Display of CPU register values and the content of the stack after each instruction
   * Display of symbols by memory segments
+  * Basic debugging features which includes the ability to set breakpoints and continue exectuion until a breakpoint is hit
 
 # GUI Design
 
