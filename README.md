@@ -11,4 +11,4 @@ This project is an educational tool designed to help students learn x86-64 assem
 
 # GUI Design
 
-![latvany](https://github.com/user-attachments/assets/d6a7a94f-9ce9-4cd1-a286-cb53c3993b72)
+![hohoemu_new](https://github.com/user-attachments/assets/8082a01d-abd8-4eda-bb5e-8e7f431ec4de)
