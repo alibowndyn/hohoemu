@@ -4,34 +4,34 @@ import dearpygui.dearpygui as dpg
 
 
 
-main_regs = [
+main_regs = (
     'RAX', 'RBX', 'RCX', 'RDX', 'RSI', 'RDI',
     'RBP', 'RSP', 'R8', 'R9', 'R10', 'R11',
     'R12', 'R13', 'R14', 'R15', 'RIP', 'RFLAGS',
 #   'CS', 'DS', 'SS', 'ES', 'FS', 'GS'
-]
+)
 
-flags = ['CF', 'PF', 'ZF', 'SF', 'OF']
+flags = ('CF', 'PF', 'ZF', 'SF', 'OF')
 '''The flags in the RFLAGS register.'''
 
 reg_subparts = {
-    'RAX': ['EAX', 'AX', 'AH', 'AL'],
-    'RBX': ['EBX', 'BX', 'BH', 'BL'],
-    'RCX': ['ECX', 'CX', 'CH', 'CL'],
-    'RDX': ['EDX', 'DX', 'DH', 'DL'],
-    'RSI': ['ESI', 'SI', 'SIL'],
-    'RDI': ['EDI', 'DI', 'DIL'],
-    'RBP': ['EBP', 'BP', 'BPL'],
-    'RSP': ['ESP', 'SP', 'SPL'],
-    'R8':  ['R8D', 'R8W', 'R8B'],
-    'R9':  ['R9D', 'R9W', 'R9B'],
-    'R10': ['R10D', 'R10W', 'R10B'],
-    'R11': ['R11D', 'R11W', 'R11B'],
-    'R12': ['R12D', 'R12W', 'R12B'],
-    'R13': ['R13D', 'R13W', 'R13B'],
-    'R14': ['R14D', 'R14W', 'R14B'],
-    'R15': ['R15D', 'R15W', 'R15B'],
-    'RIP': ['EIP', 'IP'],
+    'RAX': ('EAX', 'AX', 'AH', 'AL'),
+    'RBX': ('EBX', 'BX', 'BH', 'BL'),
+    'RCX': ('ECX', 'CX', 'CH', 'CL'),
+    'RDX': ('EDX', 'DX', 'DH', 'DL'),
+    'RSI': ('ESI', 'SI', 'SIL'),
+    'RDI': ('EDI', 'DI', 'DIL'),
+    'RBP': ('EBP', 'BP', 'BPL'),
+    'RSP': ('ESP', 'SP', 'SPL'),
+    'R8':  ('R8D', 'R8W', 'R8B'),
+    'R9':  ('R9D', 'R9W', 'R9B'),
+    'R10': ('R10D', 'R10W', 'R10B'),
+    'R11': ('R11D', 'R11W', 'R11B'),
+    'R12': ('R12D', 'R12W', 'R12B'),
+    'R13': ('R13D', 'R13W', 'R13B'),
+    'R14': ('R14D', 'R14W', 'R14B'),
+    'R15': ('R15D', 'R15W', 'R15B'),
+    'RIP': ('EIP', 'IP'),
     'RFLAGS': flags,
     # 'CS': [],
     # 'DS': [],
@@ -42,7 +42,7 @@ reg_subparts = {
 }
 '''A mapping of the register names to their subparts.'''
 
-irrelevant_symbols = ['_IO_stdin_used', '__data_start', '__dso_handle', 'completed.0']
+irrelevant_symbols = ('_IO_stdin_used', '__data_start', '__dso_handle', 'completed.0')
 
 
 def get_program_dir():

@@ -7,8 +7,6 @@
 #define COMPILED_FILE_PATH   "/tmp/compiled_assembly_file"
 #define SERIALIZED_OUTPUT_PATH  "/tmp/emu_output_240830.txt"
 #define MAX_FILENAME_LEN 255
-#define NOBODY_UID 65534
-#define NOBODY_GID 65534
 
 
 struct Symbol
