@@ -34,6 +34,7 @@ class MainMenuBar():
             with dpg.menu(label='File'):
 
                 dpg.add_menu_item(label='Load assembly file', callback=self.show_file_dialog)
+                dpg.add_menu_item(label='Reload file', callback=self.gui.load_assembly_file)
 
             with dpg.menu(label='About'):
                 dpg.add_menu_item(label='Help', callback=self.show_help_dialog)
@@ -47,7 +48,7 @@ class MainMenuBar():
 
             with dpg.file_dialog(modal=True, directory_selector=False,
                                  min_size=[self._file_dialog_modal_width, self._file_dialog_modal_height],
-                                 callback=self.gui.load_assembly_file):
+                                 callback=self.gui.get_assembly_file):
 
                 dpg.add_file_extension(".s", color=self._assembly_file_color, custom_text="[Assembly]")
                 dpg.add_file_extension("", color=self._normal_file_color)

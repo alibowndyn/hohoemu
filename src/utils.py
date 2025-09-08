@@ -8,7 +8,6 @@ main_regs = (
     'RAX', 'RBX', 'RCX', 'RDX', 'RSI', 'RDI',
     'RBP', 'RSP', 'R8', 'R9', 'R10', 'R11',
     'R12', 'R13', 'R14', 'R15', 'RIP', 'RFLAGS',
-#   'CS', 'DS', 'SS', 'ES', 'FS', 'GS'
 )
 
 flags = ('CF', 'PF', 'ZF', 'SF', 'OF')
@@ -33,12 +32,6 @@ reg_subparts = {
     'R15': ('R15D', 'R15W', 'R15B'),
     'RIP': ('EIP', 'IP'),
     'RFLAGS': flags,
-    # 'CS': [],
-    # 'DS': [],
-    # 'SS': [],
-    # 'ES': [],
-    # 'FS': [],
-    # 'GS': []
 }
 '''A mapping of the register names to their subparts.'''
 
@@ -46,7 +39,7 @@ irrelevant_symbols = ('_IO_stdin_used', '__data_start', '__dso_handle', 'complet
 
 
 def get_program_dir():
-    '''Return the directory the program is running from.'''
+    '''Returns the directory the program is running from.'''
 
     if getattr(sys, 'frozen', False):
         # we are running in a bundle created by PyInstaller

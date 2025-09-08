@@ -1,2 +1,2 @@
-pyinstaller==6.10.0
-dearpygui==2.0.0b1
+pyinstaller==6.15.0
+dearpygui==2.1.0
