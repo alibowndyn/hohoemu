@@ -42,28 +42,6 @@ static uc_err _uc_err_check(uc_err err, const char *expr)
 
 
 
-uint8_t stack_overflowed = 0;
-static void check_stack_overflow(uint64_t address)
-{
-    if (address < STACK_END_ADDR && address >= STACK_END_ADDR - 8)
-    {
-        fprintf(stderr, "\n#__# Stack overflow\nRSP: %#lx\tADDR:%#lx\tSTACK_END_ADDR:%#lx\n", REG_RSP, address, STACK_END_ADDR);
-        stack_overflowed = 1;
-        write_stack_overflow_info(address);
-        ABORT()
-    }
-}
-
-static void check_valid_stack_pointer()
-{
-    if ( REG_RSP >= STACK_START_ADDR || REG_RSP <= STACK_END_ADDR)
-    {
-        write_invalid_stack_pointer_value_indicator();
-        fprintf(stderr, "\n@__@ STACK POINTER POINTS TO A MEMORY LOCATION NOT WITHIN THE STACK\n%#lx\n", REG_RSP);
-        ABORT()
-    }
-}
-
 /**
  * @brief Read and save the contents of the registers listed in `x86_64_registers`
  */
@@ -121,7 +99,7 @@ static void write_symbols_from_dynamic_memory_segments()
     }
 }
 
-static int should_stop_emulation(uint64_t address, uint32_t size, __uint128_t insn_bytecode)
+static int should_stop_emulation(uint32_t size, __uint128_t insn_bytecode)
 {
     uint64_t stack_at_rsp = 0;
     if (UC_ERR_CHECK( uc_mem_read(uc, REG_RSP, &stack_at_rsp, sizeof(stack_at_rsp)) ))
@@ -176,20 +154,14 @@ static void hook_insn(uc_engine *uc, uint64_t address, uint32_t size, void *user
 
 
     write_instruction_info(index, size, insn_bytecode);
-    check_valid_stack_pointer();
 
     write_symbols_from_dynamic_memory_segments();
 
     // if we are about to execute the last `ret` instruction, stop the emulation
-    if ( should_stop_emulation(address, size, insn_bytecode) )
+    if ( should_stop_emulation(size, insn_bytecode) )
     {
         if (UC_ERR_CHECK( uc_emu_stop(uc) ))
             ABORT()
-    }
-    if (stack_overflowed)
-    {
-        write_stack_overflow_info(address);
-        ABORT()
     }
 }
 
@@ -221,14 +193,12 @@ static void hook_mem_access(uc_engine *uc, uc_mem_type type, uint64_t address, i
         printf("MEMORY WRITE:\n"
                "Writing [%d] bytes of data with value [d:%lu  -  h:%#lx] at address [%#lx].\n"
                "RIP: %#lx\n", size, value, value, address, rip);
-        check_stack_overflow(address);
         break;
 
     case UC_MEM_FETCH:
         printf("MEMORY FETCH:\n"
                "Fetching [%d] bytes of data at address [%#lx].\n"
                "RIP: %#lx\n", size, address, rip);
-        check_valid_stack_pointer();
         break;
 
     default:

@@ -223,19 +223,6 @@ class ExecutionContext:
     '''Whether the program has ended.'''
 
 @dataclass
-class RuntimeExceptionInfo:
-    '''A representation of the information about a runtime exception.'''
-
-    index: int
-    '''The index of the context where the exception occurred.'''
-    has_stack_overflowed: bool
-    '''Whether the stack has overflowed.'''
-    addr: int
-    '''The value stored in the stack pointer.'''
-    is_rsp_invalid: bool
-    '''Whether the stack pointer contains an invalid value.'''
-
-@dataclass
 class ExecutedProgram:
     '''A representation of a program that has been executed.'''
 
@@ -249,8 +236,6 @@ class ExecutedProgram:
     '''The static memory of the program.'''
     contexts: list[ExecutionContext]
     '''The execution contexts of the program.'''
-    ex_info: RuntimeExceptionInfo
-    '''Information about a runtime exception.'''
 
 
     def step(self, direction: int) -> int:
@@ -304,8 +289,7 @@ def create_empty_executed_program() -> ExecutedProgram:
         StaticMemory(
             TextSegment(0, 'text', 0, 0, [], 0, []),
             MemorySegment('rodata', 0, 0, [], 0, [])),
-        [],
-        RuntimeExceptionInfo(0, False, 0, False))
+        [])
 
 def create_empty_execution_context() -> ExecutionContext:
     '''Creates an empty `ExecutionContext`.'''

@@ -18,6 +18,8 @@ FONT_SCALE = 2
 class GUI:
     '''A class that represents the GUI of the emulator.'''
 
+    file_path: str = ""
+    '''The path of the opened assembly file.'''
     insn_counter: int = 0
     '''The number of instructions executed so far.'''
     program: ExecutedProgram = None
@@ -29,7 +31,7 @@ class GUI:
     _addr_color_theme: tuple[int, int, int] = (255, 87, 51)
     '''The color theme for memory addresses.'''
     program_ended: bool = False
-    '''Whether the program has ended.'''
+    '''Indicates whether the program has ended.'''
 
 
     def __init__(self,
@@ -40,13 +42,15 @@ class GUI:
         '''The width of the GUI window.'''
         self.height = height
         '''The height of the GUI window.'''
-
+        self.program_dir = get_program_dir()
+        '''The path of the directory containing the program's executable.'''
 
         dpg.create_context()
 
+
         # load font asset
         with dpg.font_registry():
-            default_font = dpg.add_font(f'{ get_program_dir() }/assets/Consolas.ttf', 18*FONT_SCALE)
+            default_font = dpg.add_font(f'{ self.program_dir }/assets/Consolas.ttf', 18*FONT_SCALE)
 
         dpg.set_global_font_scale(1/FONT_SCALE)
         dpg.bind_font(default_font)
@@ -89,18 +93,28 @@ class GUI:
         dpg.destroy_context()
 
 
-    def load_assembly_file(self, sender, app_data):
-        '''Loads the assembly code from the specified file.'''
+    def get_assembly_file(self, sender, app_data):
+        '''Acts as the callback function of the file modal dialog.'''
 
-        # delete the file dialog's container window, which is used to center the file dialog
+        # delete the file dialog's container window, which was used to center the file dialog
         dpg.delete_item(self.main_menubar.modal_container_window)
 
         self.file_path = app_data['file_path_name']
-        return_code = subprocess.call(f'{ get_program_dir() }/asemu { self.file_path }',
+        self.load_assembly_file()
+
+    def load_assembly_file(self):
+        '''Loads and emulates the chosen assembly source file.'''
+
+        # we clicked on 'Reload file' while no file was loaded into our program
+        if self.file_path == "":
+            return
+
+        return_code = subprocess.call(f'{ self.program_dir }/asemu { self.file_path }',
             shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
         if return_code != 0:
             self.code_section.show_error_message()
+            self.file_path = ""
             return
 
         try:
@@ -141,8 +155,8 @@ class GUI:
         self.register_section.update_register_values()
 
         # update the stack window if the stack pointer has changed
-        if self.stack_section.rsp != self.program.get_current_context().regs.RSP:
-            self.stack_section.update_stack_window()
+        #if self.stack_section.rsp != self.program.get_current_context().regs.RSP:
+        self.stack_section.update_stack_window()
 
         self.symbols_section.update_symbols_window()
 

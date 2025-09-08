@@ -120,16 +120,6 @@ void write_stack_content(int size, uint8_t *bytes)
     PRINT_TO_FILE("\n");
 }
 
-void write_stack_overflow_info(uint64_t addr)
-{
-    PRINT_TO_FILE("#__# %ld", addr)
-}
-
-void write_invalid_stack_pointer_value_indicator()
-{
-    PRINT_TO_FILE("@__@")
-}
-
 void destroy_serializer()
 {
     fclose(emu_out_fp);
