@@ -3,7 +3,7 @@ from gui import *
 
 
 def main():
-    gui = GUI(1750, 900)
+    GUI(1480, 850)
 
 
 

@@ -1,0 +1,15 @@
+To load an assembly file, click on "File" -> "Load assembly file".
+The assembly code will be emulated and the GUI will then display the state of the emulated program right before the execution of the first instruction.
+NOTE: This is not live emulation, the code has already been executed and the GUI simply shows the state of the processor and some parts of the program's memory between instruction executions.
+The GUI highlights the next instruction about to be executed.
+It also shows which memory address is stored in RSP, indicated by a highlighted row on the Stack window.
+
+If you click on "Next" or press the down arrow key, the next instruction will be executed.
+If you click on "Previous" or press the up arrow key, you can "step backwards" in the program's execution.
+You can set a breakpoint by clicking on an instruction's memory address. The address will be highlighted in bright red.
+If you set one or more breakpoints and click on "Continue" or press the right arrow key, execution will continue until a breakpoint is hit or the program ends.
+You can reset the program either by clicking on "Reset", or by pressing the left arrow key.
+
+You can resize the Code window once an assembly file is loaded.
+You can click on a register's name to see the smaller parts of that register.
+If you have symbols, you can click on their names too to see their content byte by byte.

@@ -27,7 +27,7 @@ class StackWindow():
         '''The index of the highlighted row in the stack table.'''
 
 
-        with dpg.child_window(width=300, resizable_x=True):
+        with dpg.child_window(auto_resize_x=True):
                 dpg.add_text('Stack')
 
                 dpg.add_separator()
