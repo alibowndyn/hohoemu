@@ -15,6 +15,8 @@ class SymbolsWindow():
     '''The tags of the selectable widgets for each segment.'''
     _sym_byte_group_tags: dict[str, dict[str, list[int]]] = { 'rodata': {}, 'data': {}, 'bss': {} }
     '''The tags of the group widgets containing the bytes for each symbol.'''
+    width: int = 385
+    '''Width of the symbols window.'''
 
 
     def __init__(self,
@@ -24,13 +26,11 @@ class SymbolsWindow():
         '''A reference to the main GUI object.'''
 
 
-        with dpg.child_window(width=400, border=True, resizable_x=True, no_scrollbar=True, no_scroll_with_mouse=True):
-
+        with dpg.child_window(width=self.width) as self.window:
             dpg.add_text(default_value='Static data symbols')
             dpg.add_separator()
 
-            with dpg.table(header_row=False, row_background=False, resizable=False,
-                           no_host_extendX=True, scrollY=True):
+            with dpg.table(header_row=False, row_background=False, resizable=False, scrollY=True):
 
                 dpg.add_table_column()
 

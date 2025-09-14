@@ -18,7 +18,7 @@ class RegisterWindow():
         '''A reference to the main GUI object.'''
 
 
-        with dpg.child_window(width=400, resizable_x=True) as self.window:
+        with dpg.child_window(auto_resize_x=True) as self.window:
 
             with dpg.group(horizontal=True):
                 dpg.add_text(default_value='Registers')

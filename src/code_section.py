@@ -39,7 +39,7 @@ class CodeWindow():
         '''A reference to the main GUI object.'''
 
 
-        with dpg.child_window(width=600, resizable_x=True) as self.window:
+        with dpg.child_window(auto_resize_x=True) as self.window:
 
             with dpg.group(horizontal=True):
 
@@ -53,7 +53,7 @@ class CodeWindow():
             dpg.add_separator()
 
             with dpg.tab_bar():
-                with dpg.tab(label='Assembled code') as self.assembled_code_tab:
+                with dpg.tab(label='Assembly code') as self.assembly_code_tab:
                     pass
 
                 with dpg.tab(label='Raw code'):
@@ -64,12 +64,7 @@ class CodeWindow():
     def build_code_table(self):
         '''Builds the table containing the instructions extracted by the emulator's preprocessor.'''
 
-        self.highlighted_row_idx = 0
-        self.row_tags.clear()
-        self.address_tags.clear()
-        self.text_tags.clear()
-
-        with dpg.table(parent=self.assembled_code_tab, header_row=False, row_background=False, scrollX=True,
+        with dpg.table(parent=self.assembly_code_tab, header_row=False, row_background=False, scrollX=True,
                        resizable=False, policy=dpg.mvTable_SizingFixedFit) as self.code_table:
 
             dpg.add_table_column()
@@ -104,19 +99,30 @@ class CodeWindow():
         else:
             dpg.show_item(self.emulation_failed_modal)
 
-    def initialize_code_window(self):
-        '''Initializes the code window.'''
-
-        raw_assembly = open(self.gui.file_path, 'r').read()
-        dpg.set_value(self.raw_assembly_text, raw_assembly)
+    def reset_code_window(self):
+        '''Resets the code window to a clean state.'''
 
         if dpg.does_item_exist(self.code_table):
             dpg.delete_item(self.code_table)
 
         self.breakpoints.clear()
 
+        self.highlighted_row_idx = 0
+        self.row_tags.clear()
+        self.address_tags.clear()
+        self.text_tags.clear()
+
+    def initialize_code_window(self):
+        '''Initializes the code window.'''
+
+        self.reset_code_window()
+
         self.build_code_table()
         self.update_code_window()
+
+        raw_assembly = open(self.gui.file_path, 'r').read()
+        dpg.set_value(self.raw_assembly_text, raw_assembly)
+
 
     def update_code_window(self):
         '''Updates the code window to match the current execution context.'''

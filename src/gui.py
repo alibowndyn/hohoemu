@@ -11,7 +11,9 @@ from symbols_section import SymbolsWindow
 import dearpygui.dearpygui as dpg
 
 
-FONT_SCALE = 2
+FONT_SCALE = 3
+MIN_WIDTH = 1280
+MIN_HEIGHT = 720
 
 
 
@@ -38,14 +40,12 @@ class GUI:
                  width: int,
                  height: int):
 
-        self.width = width
-        '''The width of the GUI window.'''
-        self.height = height
-        '''The height of the GUI window.'''
         self.program_dir = get_program_dir()
         '''The path of the directory containing the program's executable.'''
 
         dpg.create_context()
+        dpg.create_viewport(title='Hohoemu', width=width, min_width=MIN_WIDTH, height=height, min_height=MIN_HEIGHT)
+        dpg.set_viewport_resize_callback(self.viewport_resize_callback)
 
 
         # load font asset
@@ -65,15 +65,14 @@ class GUI:
             dpg.add_key_press_handler(dpg.mvKey_Right, callback=self.continue_until_breakpoint)
             dpg.add_key_press_handler(dpg.mvKey_Left, callback=self.reset)
 
-            dpg.add_mouse_wheel_handler(callback=self.on_mouse_wheel_scroll)
 
-        # set up the main menu bar
-        self.main_menubar = MainMenuBar(self)
+        with dpg.window(tag='#main_window', pos=[0,0], no_resize=True,
+            no_title_bar=True, horizontal_scrollbar=True, no_move=True) as self.main_window:
 
-        # main window
-        with dpg.window(tag='#main_window') as self.main_window:
+            # set up the main menu bar
+            self.main_menubar = MainMenuBar(self)
 
-            with dpg.group(pos=[0, 20], horizontal=True):
+            with dpg.group(horizontal=True):
 
                 self.code_section = CodeWindow(self)
                 self.register_section = RegisterWindow(self)
@@ -82,15 +81,21 @@ class GUI:
 
         self.bind_themes()
 
+
         # start the Dear PyGui rendering loop
-        dpg.create_viewport(title='Hohoemu', width=self.width, height=self.height, min_width=self.width, min_height=self.height)
         dpg.setup_dearpygui()
         dpg.show_viewport()
-        dpg.set_primary_window(self.main_window, True)
+
+        # resize everything on the 1st frame
+        dpg.set_frame_callback(1, self.viewport_resize_callback)
 
 
         dpg.start_dearpygui()
         dpg.destroy_context()
+
+    def viewport_resize_callback(self, sender, app_data):
+        dpg.set_item_width(self.main_window, width=dpg.get_viewport_width())
+        dpg.set_item_height(self.main_window, height=dpg.get_viewport_height())
 
 
     def get_assembly_file(self, sender, app_data):
@@ -124,6 +129,8 @@ class GUI:
 
         self.program_ended = False
         self.initialize_section_windows()
+
+        dpg.configure_item(item=self.code_section.window, auto_resize_x=False, resizable_x=True)
 
     def initialize_section_windows(self):
         '''Initializes all the section windows of the GUI.'''
@@ -197,10 +204,6 @@ class GUI:
         self.stack_section.update_stack_window()
         self.symbols_section.update_symbols_window()
 
-
-    def on_mouse_wheel_scroll(self, sender, app_data, user_data):
-        '''Handles the mouse wheel scroll event.'''
-        pass
 
     def create_themes(self):
         '''Creates the themes for the GUI.'''
