@@ -31,6 +31,7 @@ install: clean out
 		--distpath $(DIST_DIR) \
 		--workpath $(BUILD_DIR) \
 		--add-data="$(ASSETS_DIR)/Consolas.ttf:$(ASSETS_DIR)" \
+		--add-data="$(ASSETS_DIR)/helptext.txt:$(ASSETS_DIR)" \
 		--add-data="$(EMU):." \
 		--name hohoemu \
 		$(TARGET) \
