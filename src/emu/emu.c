@@ -8,7 +8,7 @@
 
 
 uc_engine *uc;
-uc_hook insn_hook_handle, mem_access_handle, invalid_mem_access_handle;
+uc_hook insn_hook_handle, invalid_mem_access_handle;
 uint8_t *stack_content;
 extern struct MemoryLayout mem_layout;
 extern struct AssemblyText assembly;
@@ -165,46 +165,6 @@ static void hook_insn(uc_engine *uc, uint64_t address, uint32_t size, void *user
     }
 }
 
-/**
- * @brief Callback function for hooking memory (READ, WRITE & FETCH)
- *
- * @param type: this memory is being READ, or WRITE
- * @param address: address where the code is being executed
- * @param size: size of data being read or written
- * @param value: value of data being written to memory, or irrelevant if type = READ.
- * @param user_data: user data passed to tracing APIs
- */
-static void hook_mem_access(uc_engine *uc, uc_mem_type type, uint64_t address, int size, uint64_t value, void *user_data)
-{
-    uint64_t rip;
-    if (UC_ERR_CHECK( uc_reg_read(uc, UC_X86_REG_RIP, &rip) ))
-        ABORT()
-
-
-    switch (type)
-    {
-    case UC_MEM_READ:
-        printf("MEMORY READ:\n"
-               "Reading [%d] bytes of data at address [%#lx].\n"
-               "RIP: %#lx\n", size, address, rip);
-        break;
-
-    case UC_MEM_WRITE:
-        printf("MEMORY WRITE:\n"
-               "Writing [%d] bytes of data with value [d:%lu  -  h:%#lx] at address [%#lx].\n"
-               "RIP: %#lx\n", size, value, value, address, rip);
-        break;
-
-    case UC_MEM_FETCH:
-        printf("MEMORY FETCH:\n"
-               "Fetching [%d] bytes of data at address [%#lx].\n"
-               "RIP: %#lx\n", size, address, rip);
-        break;
-
-    default:
-        break;
-    }
-}
 
 /**
  * @brief Callback function for handling invalid memory access events (UNMAPPED and PROT events)
@@ -333,9 +293,6 @@ static void init_hooks(int *instruction_count)
     if (UC_ERR_CHECK( ADD_HOOK(insn_hook_handle,          UC_HOOK_CODE,         hook_insn, instruction_count) ))
         ABORT()
 
-    if (UC_ERR_CHECK( ADD_HOOK(mem_access_handle,         UC_HOOK_MEM_VALID,    hook_mem_access, NULL) ))
-        ABORT()
-
     if (UC_ERR_CHECK( ADD_HOOK(invalid_mem_access_handle, UC_HOOK_MEM_UNMAPPED, hook_mem_invalid, NULL) ))
         ABORT()
     if (UC_ERR_CHECK( ADD_HOOK(invalid_mem_access_handle, UC_HOOK_MEM_PROT,     hook_mem_invalid, NULL) ))
@@ -388,7 +345,6 @@ int emulate(struct TextSegment *text_segment)
 
 
     uc_hook_del(uc, insn_hook_handle);
-    uc_hook_del(uc, mem_access_handle);
     uc_close(uc);
 
 
