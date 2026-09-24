@@ -363,7 +363,7 @@ void init_emu(struct MemoryLayout *memory_layout, int *instruction_count)
 
     init_virtual_mem(memory_layout);
     init_hooks(instruction_count);
-    init_regs(memory_layout->text.seg.addr);
+    init_regs();
 }
 
 
@@ -376,7 +376,7 @@ int emulate(struct TextSegment *text_segment)
 
 
     /////////////////////////////////////////////////////////////////////
-    /////         EMULATION DONE || RETRIEVE AX AND CLEAN UP
+    /////         EMULATION DONE || RETRIEVE AL AND CLEAN UP
     /////////////////////////////////////////////////////////////////////
     puts("\n\n-----------------------------------------------------\n"
              "               ### EMULATION DONE ###\n"
