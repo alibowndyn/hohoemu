@@ -18,7 +18,7 @@ all: install
 
 
 out: $(SRCS)
-	$(CC) -Wall -Wextra $(SRCS) -L lib -lunicorn -lm -o $(EMU)
+	$(CC) -Wall -Wextra $(SRCS) -L lib -lunicorn -latomic -lm -o $(EMU)
 
 
 install: clean out
